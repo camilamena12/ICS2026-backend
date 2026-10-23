@@ -3,6 +3,7 @@ using Dsw2025Tpi.Domain.Interfaces;
 using Dsw2025Tpi.Domain.Entities;
 using Dsw2025Tpi.Application.Exceptions;
 using Microsoft.Extensions.Logging;
+using Dsw2025Tpi.Application.Extensions;
 
 
 
@@ -55,15 +56,7 @@ namespace Dsw2025Tpi.Application.Services
             await _repository.Add(product);
 
             _logger.LogInformation("Producto con ID {ProductId} y SKU {Sku} creado exitosamente.", product.Id, product.Sku);
-            return new ProductModel.ResponseProduct(
-                product.Id,
-                product.Sku,
-                product.InternalCode,
-                product.Name,
-                product.Description,
-                product.CurrentUnitPrice,
-                product.StockQuantity,
-                product.IsActive);
+            return product.ToResponseProduct();
         }
         public async Task<ProductModel.ResponseProduct?> GetProductById(Guid id)
         {
@@ -76,16 +69,7 @@ namespace Dsw2025Tpi.Application.Services
                 throw new KeyNotFoundException($"No se encontró un producto con el ID: {id}");
             }
             _logger.LogInformation("Se mostro el producto con ID: {ProductId}", id);
-            return new ProductModel.ResponseProduct(
-                product.Id,
-                product.Sku,
-                product.InternalCode,
-                product.Name,
-                product.Description,
-                product.CurrentUnitPrice,
-                product.StockQuantity,
-                product.IsActive
-            );
+            return product.ToResponseProduct();
         }
 
         public async Task<ProductModel.ResponsePagination> GetProducts(ProductModel.FilterProduct filter, bool includeInactive = false)
@@ -130,10 +114,7 @@ namespace Dsw2025Tpi.Application.Services
                 .OrderBy(p => p.Name)
                 .Skip((page - 1) * size)
                 .Take(size)
-                .Select(p => new ProductModel.ResponseProduct(
-                    p.Id, p.Sku, p.InternalCode, p.Name, p.Description,
-                    p.CurrentUnitPrice, p.StockQuantity, p.IsActive
-                ))
+                .Select(p => p.ToResponseProduct())
                 .ToList();
 
             return new ProductModel.ResponsePagination(products, filteredProducts.Count());
@@ -182,16 +163,7 @@ namespace Dsw2025Tpi.Application.Services
             var updated = await _repository.Update(existing);
             _logger.LogInformation("Producto con ID {ProductId} actualizado exitosamente.", updated.Id);
 
-            return new ProductModel.ResponseProduct(
-                updated.Id,
-                updated.Sku, 
-                updated.InternalCode,
-                updated.Name,
-                updated.Description,
-                updated.CurrentUnitPrice,
-                updated.StockQuantity,
-                updated.IsActive
-            );
+            return updated.ToResponseProduct();
         }
 
         public async Task DisableProduct(Guid id)
