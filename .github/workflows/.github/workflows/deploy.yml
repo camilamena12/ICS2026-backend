@@ -5,6 +5,7 @@ name: CI-CD - API E-commerce
 on:
   push:
     branches:
+      - feature/github-actions
       - development
       - main
   pull_request:
