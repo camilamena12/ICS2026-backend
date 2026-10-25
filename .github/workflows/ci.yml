@@ -1,0 +1,30 @@
+
+name: CI - Build API
+
+on:
+  push:
+    branches:
+      - feature/github-actions
+  pull_request:
+    branches:
+      - main
+      - development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore Dsw2025Tpi.sln
+
+      - name: Compilar solucion
+        run: dotnet build Dsw2025Tpi.sln --configuration Release --no-restore
