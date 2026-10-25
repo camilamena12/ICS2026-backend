@@ -50,3 +50,4 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ics2026-api:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/ics2026-api:${{ github.sha }}
+# Verificacion de configuracion Docker Hub
