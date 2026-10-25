@@ -30,6 +30,7 @@ jobs:
       - name: Compilar solucion
         run: dotnet build Dsw2025Tpi.sln --configuration Release --no-restore
 
+     
       - name: Construir imagen Docker
         run: docker build -t ics2026-api:${{ github.sha }} .
 
@@ -37,7 +38,7 @@ jobs:
         if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          username: guadasotelo
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Publicar imagen en Docker Hub
@@ -47,6 +48,5 @@ jobs:
           context: .
           push: true
           tags: |
-            guadasotelo/ics2026-api:latest
-            guadasotelo/ics2026-api:${{ github.sha }}
-
+            ${{ secrets.DOCKERHUB_USERNAME }}/ics2026-api:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/ics2026-api:${{ github.sha }}
