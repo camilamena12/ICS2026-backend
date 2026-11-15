@@ -146,10 +146,14 @@ public class Program
         });
 
         var app = builder.Build();
-
-        // Crear roles y configurar el administrador
-        using (var scope = app.Services.CreateScope())
+        
+        // queremos que no se ejecute cuando estemos realizando pruebas automatizadas 
+        if (!app.Environment.IsEnvironment("Testing"))
         {
+            // Crear roles y configurar el administrador
+            using (var scope = app.Services.CreateScope())
+            {
+               
             var services = scope.ServiceProvider;
 
             try
@@ -293,9 +297,10 @@ public class Program
                 Console.WriteLine(ex);
             }
         }
+        }
 
-        // Configuración del pipeline HTTP
-        if (app.Environment.IsDevelopment())
+            // Configuración del pipeline HTTP
+            if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
