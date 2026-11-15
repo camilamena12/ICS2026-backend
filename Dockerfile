@@ -10,7 +10,7 @@ COPY ["Dsw2025Tpi.Application/Dsw2025Tpi.Application.csproj", "Dsw2025Tpi.Applic
 COPY ["Dsw2025Tpi.Data/Dsw2025Tpi.Data.csproj", "Dsw2025Tpi.Data/"]
 COPY ["Dsw2025Tpi.Domain/Dsw2025Tpi.Domain.csproj", "Dsw2025Tpi.Domain/"]
 
-RUN dotnet restore "Dsw2025Tpi.sln"
+RUN dotnet restore "Dsw2025Tpi.Api/Dsw2025Tpi.Api.csproj"
 
 # Copiamos todo el código fuente restante
 COPY . .
