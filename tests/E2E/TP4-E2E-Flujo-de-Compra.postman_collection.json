@@ -1,0 +1,472 @@
+{
+	"info": {
+		"_postman_id": "cd829cf5-4a6d-4f93-b290-1e52bb1607bf",
+		"name": "TP4 - E2E Flujo de Compra",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24347701"
+	},
+	"item": [
+		{
+			"name": "01 - Registrar cliente",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"const usuario = \"cliente_e2e_\" + Date.now();\r",
+							"\r",
+							"pm.collectionVariables.set(\"e2eUsername\", usuario);\r",
+							"pm.collectionVariables.set(\"e2eEmail\", usuario + \"@ejemplo.com\");\r",
+							"pm.collectionVariables.set(\"e2ePassword\", \"PruebaE2E2026!\");\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"const respuesta = pm.response.json();\r",
+							"\r",
+							"// TEST 1: Verificar que el registro sea exitoso\r",
+							"pm.test(\"Registro devuelve HTTP 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// TEST 2: Verificar que recibimos los datos necesarios\r",
+							"pm.test(\"Registro devuelve token y customerId\", function () {\r",
+							"    pm.expect(respuesta.token).to.be.a(\"string\").and.not.empty;\r",
+							"    pm.expect(respuesta.customerId).to.be.a(\"string\").and.not.empty;\r",
+							"});\r",
+							"\r",
+							"// Guardamos los datos para las próximas solicitudes E2E\r",
+							"if (pm.response.code === 200 &&\r",
+							"    respuesta.token &&\r",
+							"    respuesta.customerId) {\r",
+							"\r",
+							"    pm.collectionVariables.set(\"e2eToken\", respuesta.token);\r",
+							"    pm.collectionVariables.set(\"e2eCustomerId\", respuesta.customerId);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n  \"username\": \"{{e2eUsername}}\",\r\n  \"password\": \"{{e2ePassword}}\",\r\n  \"email\": \"{{e2eEmail}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5142/api/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5142",
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "02 - Iniciar sesión",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Login devuelve HTTP 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"if (pm.response.code === 200) {\r",
+							"    const respuesta = pm.response.json();\r",
+							"\r",
+							"    pm.test(\"Login devuelve token JWT\", function () {\r",
+							"        pm.expect(respuesta.token)\r",
+							"            .to.be.a(\"string\").and.not.empty;\r",
+							"    });\r",
+							"\r",
+							"    pm.test(\"Login corresponde al cliente registrado\", function () {\r",
+							"        pm.expect(respuesta.userInfo.customerId)\r",
+							"            .to.eql(pm.collectionVariables.get(\"e2eCustomerId\"));\r",
+							"    });\r",
+							"\r",
+							"    // Guardamos el token para comprar después\r",
+							"    pm.collectionVariables.set(\"e2eToken\", respuesta.token);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n  \"username\": \"{{e2eUsername}}\",\r\n  \"password\": \"{{e2ePassword}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5142/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5142",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "03 - Consultar productos",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"const respuesta = pm.response.json();\r",
+							"\r",
+							"// TEST 1: Verificar que la API responda correctamente\r",
+							"pm.test(\"Catalogo devuelve HTTP 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"// TEST 2: Verificar la estructura de la respuesta\r",
+							"pm.test(\"Catalogo devuelve lista de productos y total\", function () {\r",
+							"    pm.expect(respuesta.productItems).to.be.an(\"array\");\r",
+							"    pm.expect(respuesta.total).to.be.a(\"number\");\r",
+							"});\r",
+							"\r",
+							"// TEST 3: Verificar que todos sean activos\r",
+							"pm.test(\"Catalogo solo muestra productos activos\", function () {\r",
+							"    pm.expect(\r",
+							"        respuesta.productItems.every(p => p.isActive === true)\r",
+							"    ).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// Buscamos un producto activo con stock disponible\r",
+							"const productoDisponible = respuesta.productItems.find(\r",
+							"    p => p.isActive === true && p.stockQuantity > 0\r",
+							");\r",
+							"\r",
+							"// TEST 4: Verificar que existe un producto para comprar\r",
+							"pm.test(\"Existe un producto con stock disponible\", function () {\r",
+							"    pm.expect(productoDisponible).to.exist;\r",
+							"});\r",
+							"\r",
+							"// Guardamos los datos para la siguiente solicitud E2E\r",
+							"if (pm.response.code === 200 && productoDisponible) {\r",
+							"    pm.collectionVariables.set(\"e2eProductId\", productoDisponible.id);\r",
+							"    pm.collectionVariables.set(\"e2eProductName\", productoDisponible.name);\r",
+							"    pm.collectionVariables.set(\"e2eStockInicial\", productoDisponible.stockQuantity);\r",
+							"    pm.collectionVariables.set(\"e2ePrecioUnitario\", productoDisponible.currentUnitPrice);\r",
+							"    pm.collectionVariables.set(\"e2eCantidad\", 1);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5142/api/products?pageNumber=1&pageSize=20",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5142",
+					"path": [
+						"api",
+						"products"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "20"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "04 - Crear orden de compra",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Compra devuelve HTTP 201 Created\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"if (pm.response.code === 201) {\r",
+							"    const respuesta = pm.response.json();\r",
+							"\r",
+							"    // TEST 2: Verificar que se creó una orden con ID\r",
+							"    pm.test(\"Orden creada tiene identificador\", function () {\r",
+							"        pm.expect(respuesta.orderId)\r",
+							"            .to.be.a(\"string\").and.not.empty;\r",
+							"    });\r",
+							"\r",
+							"    // TEST 3: Verificar el total de la compra\r",
+							"    pm.test(\"Total de compra calculado correctamente\", function () {\r",
+							"        const precio = Number(\r",
+							"            pm.collectionVariables.get(\"e2ePrecioUnitario\")\r",
+							"        );\r",
+							"\r",
+							"        const cantidad = Number(\r",
+							"            pm.collectionVariables.get(\"e2eCantidad\")\r",
+							"        );\r",
+							"\r",
+							"        pm.expect(respuesta.totalAmount)\r",
+							"            .to.equal(precio * cantidad);\r",
+							"    });\r",
+							"\r",
+							"    // TEST 4: Verificar el producto comprado\r",
+							"    pm.test(\"Orden contiene el producto seleccionado\", function () {\r",
+							"        pm.expect(respuesta.items).to.be.an(\"array\");\r",
+							"\r",
+							"        const item = respuesta.items.find(\r",
+							"            p => p.productId ===\r",
+							"                pm.collectionVariables.get(\"e2eProductId\")\r",
+							"        );\r",
+							"\r",
+							"        pm.expect(item).to.exist;\r",
+							"        pm.expect(item.quantity).to.equal(1);\r",
+							"    });\r",
+							"\r",
+							"    // Guardamos el ID para consultar la orden después\r",
+							"    if (respuesta.orderId) {\r",
+							"        pm.collectionVariables.set(\r",
+							"            \"e2eOrderId\",\r",
+							"            respuesta.orderId\r",
+							"        );\r",
+							"    }\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{e2eToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "\r\n{\r\n  \"customerId\": \"{{e2eCustomerId}}\",\r\n  \"shippingAddress\": \"San Miguel de Tucuman\",\r\n  \"billingAddress\": \"San Miguel de Tucuman\",\r\n  \"notes\": \"Compra automatizada\",\r\n  \"items\": [\r\n    {\r\n      \"productId\": \"{{e2eProductId}}\",\r\n      \"quantity\": 1\r\n    }\r\n  ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5142/api/orders",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5142",
+					"path": [
+						"api",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "05 - Consultar orden creada",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Consulta de orden devuelve HTTP 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"if (pm.response.code === 200) {\r",
+							"\r",
+							"    const respuesta = pm.response.json();\r",
+							"\r",
+							"    // TEST 2: Es la misma orden que creamos\r",
+							"    pm.test(\"La orden consultada es la orden creada\", function () {\r",
+							"        pm.expect(respuesta.orderId).to.eql(\r",
+							"            pm.collectionVariables.get(\"e2eOrderId\")\r",
+							"        );\r",
+							"    });\r",
+							"\r",
+							"    // TEST 3: El total se mantiene correcto\r",
+							"    pm.test(\"El total de la orden coincide con la compra\", function () {\r",
+							"        const precio = Number(\r",
+							"            pm.collectionVariables.get(\"e2ePrecioUnitario\")\r",
+							"        );\r",
+							"\r",
+							"        const cantidad = Number(\r",
+							"            pm.collectionVariables.get(\"e2eCantidad\")\r",
+							"        );\r",
+							"\r",
+							"        pm.expect(respuesta.totalAmount)\r",
+							"            .to.equal(precio * cantidad);\r",
+							"    });\r",
+							"\r",
+							"    // TEST 4: La orden conserva el producto comprado\r",
+							"    pm.test(\"La orden contiene el producto comprado\", function () {\r",
+							"        pm.expect(respuesta.items).to.be.an(\"array\");\r",
+							"\r",
+							"        const producto = respuesta.items.find(\r",
+							"            item => item.productId ===\r",
+							"                pm.collectionVariables.get(\"e2eProductId\")\r",
+							"        );\r",
+							"\r",
+							"        pm.expect(producto).to.exist;\r",
+							"        pm.expect(producto.quantity).to.equal(1);\r",
+							"    });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{e2eToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5142/api/orders/{{e2eOrderId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5142",
+					"path": [
+						"api",
+						"orders",
+						"{{e2eOrderId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "e2eUsername",
+			"value": ""
+		},
+		{
+			"key": "e2eEmail",
+			"value": ""
+		},
+		{
+			"key": "e2ePassword",
+			"value": ""
+		},
+		{
+			"key": "e2eToken",
+			"value": ""
+		},
+		{
+			"key": "e2eCustomerId",
+			"value": ""
+		},
+		{
+			"key": "e2eProductId",
+			"value": ""
+		},
+		{
+			"key": "e2eProductName",
+			"value": ""
+		},
+		{
+			"key": "e2eStockInicial",
+			"value": ""
+		},
+		{
+			"key": "e2ePrecioUnitario",
+			"value": ""
+		},
+		{
+			"key": "e2eCantidad",
+			"value": ""
+		},
+		{
+			"key": "e2eOrderId",
+			"value": ""
+		}
+	]
+}
