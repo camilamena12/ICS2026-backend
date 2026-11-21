@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/github-actions
+      - 'test/**'
       - development
       - main
   pull_request:
@@ -12,7 +13,32 @@ on:
       - main
 
 jobs:
+  # JOB 1 - Quality Gate: ejecuta las pruebas unitarias y de integracion.
+  # Si alguna falla, el job termina en error y el job "build" NO se ejecuta.
+  run-tests:
+    name: Quality Gate - Pruebas unitarias e integracion
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restaurar dependencias
+        run: dotnet restore Dsw2025Tpi.sln
+
+      - name: Ejecutar pruebas automatizadas
+        run: dotnet test Dsw2025Tpi.sln --no-restore --verbosity normal
+
+  # JOB 2 - Compilacion, imagen Docker y publicacion en Docker Hub.
+  # Depende estrictamente del exito de run-tests (aplica a push y pull request).
   build:
+    name: Build, Docker y publicacion
+    needs: run-tests
     runs-on: ubuntu-latest
 
     steps:
