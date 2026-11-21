@@ -137,11 +137,12 @@ public class ProductsIntegrationTests
 
 		using var client = _factory.CreateClient();
 
-		// ACT: búsqueda "mouse" (minúsculas) + paginación por query string
-		var response = await client.GetAsync($"/api/products?search=mouse {tag}&pageNumber=1&pageSize=10");
+        // ACT: búsqueda "mouse" (minúsculas) + paginación por query string
+        var filtro = Uri.EscapeDataString($"gamer {tag}");
+        var response = await client.GetAsync($"/api/products?search={filtro}&pageNumber=1&pageSize=10");
 
-		// ASSERT
-		Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        // ASSERT
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
 		using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
 		var items = json.RootElement.GetProperty("productItems");
