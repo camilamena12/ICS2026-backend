@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Hosting;
 using Dsw2025Tpi.Api;
 using Dsw2025Tpi.Data;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -10,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ECommerce.IntegrationTests;
 
@@ -56,6 +59,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 			// Configurar SQLite para los datos del negocio
 			services.AddDbContext<Dsw2025TpiContext>(options =>
 				options.UseSqlite(_businessConnection));
+
+			// Validar los tokens JWT con la clave exclusiva de pruebas, asi los
+			// tokens generados en TestHelpers siempre coinciden con la API
+			services.PostConfigure<JwtBearerOptions>(
+				JwtBearerDefaults.AuthenticationScheme,
+				options =>
+				{
+					options.TokenValidationParameters.ValidIssuer = "Testing";
+					options.TokenValidationParameters.ValidAudience = "Testing";
+					options.TokenValidationParameters.IssuerSigningKey =
+						new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+							"ClaveExclusivaDeTesting12345678901234567890"));
+				});
 
 			// Configurar SQLite para usuarios y roles
 			services.AddDbContext<AuthenticateContext>(options =>
