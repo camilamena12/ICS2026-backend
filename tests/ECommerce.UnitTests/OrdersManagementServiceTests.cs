@@ -89,7 +89,7 @@ public class OrdersManagementServiceTests
         Assert.Equal(45000m, resultado.TotalAmount);
 
         // Stock inicial 10 - 3 compradas = 7
-        Assert.Equal(999, producto.StockQuantity);
+        Assert.Equal(7, producto.StockQuantity);
 
         // Comprobar los datos de la orden
         var item = Assert.Single(resultado.Items);
